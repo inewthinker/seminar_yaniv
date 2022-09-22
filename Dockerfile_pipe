@@ -1,0 +1,31 @@
+FROM python:latest as builder
+RUN echo " installing python folders "
+WORKDIR /sourcecode
+COPY ./test ./test
+COPY ./sourcecode/* ./sourcecode
+RUN echo "BUILDING THE APP!"
+
+
+FROM alpin:latest as unittest
+WORKDIR /unittest
+COPY --from=builder /sourcecode/test ./test
+RUN echo " RUNNING UNITEST NOW!" >./test
+
+
+FROM alpin:latest as sonarsecurity
+WORKDIR /sonar
+COPY --from=builder /sourcecode/* ./
+COPY --from=unittest /unittest/test ./test
+RUN echo " RUNNING SONAR NOW!" >>./test
+
+
+FROM alpin:latest as mailreports
+WORKDIR /reports
+COPY --from=sonarsecurity /sonar/test ./test
+RUN echo " SENDING REPOETS!" >>./test
+
+
+FROM alpin:latest as myniceapp
+WORKDIR /code
+COPY --from=builder /sourcecode/*.py ./
+CMD ls ./ && sleep 20
